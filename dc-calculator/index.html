@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инженерный калькулятор DC: Сечение кабеля и Аккумуляторы</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-dark: #090e1a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 24px 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            color: #60a5fa;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Верхнее меню вкладок */
+        .tabs-nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: var(--bg-card);
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Сетка калькулятора */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .tabs-nav {
+                flex-direction: column;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+        }
+
+        /* Переключатель Вт / А */
+        .mode-switch {
+            display: flex;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 14px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 7px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: var(--bg-card);
+            color: #60a5fa;
+            border: 1px solid var(--border);
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        select:focus, input[type="number"]:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 8px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        /* Главный блок результата */
+        .hero-result {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .hero-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .hero-value {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #60a5fa;
+            margin: 4px 0;
+        }
+
+        .hero-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Шкала просадки напряжения */
+        .progress-wrap {
+            margin-bottom: 16px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-main);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 30%;
+            background: var(--success);
+            transition: width 0.2s, background-color 0.2s;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 12px;
+            background: rgba(15, 23, 42, 0.55);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .metric-val {
+            font-weight: 600;
+        }
+
+        .tip-box {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px dashed var(--success);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* Справочный блок для SEO внизу */
+        .info-section {
+            margin-top: 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .info-section h2 {
+            font-size: 1.15rem;
+            color: #60a5fa;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Инженерный калькулятор цепей постоянного тока (DC)</h1>
+        <p>Точный расчет проводки, предохранителей и автономности аккумуляторов 12В / 24В / 48В</p>
+    </header>
+
+    <!-- Навигация по вкладкам -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1. Сечение кабеля и потери (DC)</button>
+        <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2. Время работы от АКБ (А·ч)</button>
+    </div>
+
+    <!-- ВКЛАДКА 1: КАЛЬКУЛЯТОР КАБЕЛЯ -->
+    <div class="tab-content active" id="tabContent1">
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">Параметры цепи</div>
+                    <div class="form-group">
+                    <label>Напряжение питания (U):</label>
+                    <select id="voltage" onchange="runCableCalc()">
+                        <option value="12" selected>12 В (Авто / Светодиоды)</option>
+                        <option value="24">24 В (Грузовики / Сборки)</option>
+                        <option value="36">36 В (Электротранспорт)</option>
+                        <option value="48">48 В (Солнечные системы)</option>
+                    </select>
+                </div>
+
+                <div class="mode-switch">
+                    <button class="mode-btn active" id="modeWattsBtn" onclick="setInputMode('watts')">Задать мощность (Вт)</button>
+                    <button class="mode-btn" id="modeAmpsBtn" onclick="setInputMode('amps')">Задать ток (А)</button>
+                </div>
+
+                <!-- Поле для Ватт -->
+                <div class="form-group" id="wattsGroup">
+                    <label>
+                        <span>Мощность нагрузки (Вт):</span>
+                        <span id="powerLabel">120</span>
+                    </label>
+                    <input type="number" id="powerInput" value="120" min="1" max="15000" oninput="syncPower(this.value)">
+                    <input type="range" id="powerRange" value="120" min="5" max="2500" step="5" oninput="syncPower(this.value)">
+                </div>
+
+                <!-- Поле для Ампер (скрыто по умолчанию) -->
+                <div class="form-group" id="ampsGroup" style="display: none;">
+                    <label>
+                        <span>Сила тока нагрузки (А):</span>
+                        <span id="ampsLabel">10</span>
+                    </label>
+                    <input type="number" id="ampsInput" value="10" min="0.5" max="500" step="0.5" oninput="syncAmps(this.value)">
+                    <input type="range" id="ampsRange" value="10" min="1" max="150" step="1" oninput="syncAmps(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span>Длина линии в одну сторону (м):</span>
+                        <span id="lengthLabel">5</span>
+                    </label>
+                    <input type="number" id="lengthInput" value="5" min="0.5" max="200" step="0.5" oninput="syncLength(this.value)">
+                    <input type="range" id="lengthRange" value="5" min="0.5" max="50" step="0.5" oninput="syncLength(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Допустимые потери напряжения:</label>
+                    <select id="dropLimit" onchange="runCableCalc()">
+                        <option value="2">2% (LED-ленты / Электроника)</option>
+                        <option value="3" selected>3% (Стандарт для силовых линий)</option>
+                        <option value="5">5% (Моторы / Лебедки / Насосы)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Материал жилы:</label>
+                    <select id="material" onchange="runCableCalc()">
+                        <option value="0.0175" selected>Медь (Cu) — 0.0175 Ом·мм²/м</option>
+                        <option value="0.028">Алюминий (Al) — 0.028 Ом·мм²/м</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Результаты подбора</div>
+
+                <div class="hero-result">
+                    <div class="hero-label">Рекомендуемое сечение (ГОСТ)</div>
+                    <div class="hero-value"><span id="outStandardSection">6.0</span> мм²</div>
+                    <div class="hero-sub">Точное расчетное: <span id="outExactSection">4.86</span> мм²</div>
+                </div>
+
+                <div class="progress-wrap">
+                    <div class="progress-header">
+                        <span>Фактическая просадка на выбранном кабеле:</span>
+                        <span id="outDropPercentText">2.4%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="dropProgressBar"></div>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span>Рабочий ток в цепи (I):</span>
+                    <span class="metric-val"><span id="outCurrent">10.0</span> А</span>
+                </div>
+                <div class="metric-item">
+                    <span>Мощность нагрузки (P):</span>
+                    <span class="metric-val"><span id="outPower">120</span> Вт</span>
+                </div>
+                <div class="metric-item">
+                    <span>Рекомендуемый предохранитель:</span>
+                    <span class="metric-val"><span id="outFuse">15</span> А</span>
+                </div>
+                <div class="metric-item">
+                    <span>Падение напряжения (В):</span>
+                    <span class="metric-val"><span id="outDrop">0.29</span> В</span>
+                </div>
+                <div class="metric-item">
+                    <span>Напряжение на потребителе:</span>
+                    <span class="metric-val"><span id="outEndVolt">11.71</span> В</span>
+                </div>
+                <div class="metric-item">
+                    <span>Потери мощности на нагрев:</span>
+                    <span class="metric-val"><span id="outPowerLoss">2.9</span> Вт</span>
+                </div>
+
+                <div class="tip-box">
+                    Комплект: кабель <b><span id="tipCable">6.0</span> мм²</b> (всего <span id="tipTotalLen">10</span> м провода в обе стороны) и предохранитель на <b><span id="tipFuse">15</span> А</b>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА 2: КАЛЬКУЛЯТОР АККУМУЛЯТОРА -->
+    <div class="tab-content" id="tabContent2">
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">Параметры аккумулятора и нагрузки</div>
+
+                <div class="form-group">
+                    <label>Номинальное напряжение АКБ (В):</label>
+                    <select id="batVoltage" onchange="runBatteryCalc()">
+                        <option value="12" selected>12 В</option>
+                        <option value="24">24 В</option>
+                        <option value="36">36 В</option>
+                        <option value="48">48 В</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span>Емкость аккумулятора (А·ч):</span>
+                        <span id="batCapLabel">60</span>
+                    </label>
+                    <input type="number" id="batCapInput" value="60" min="1" max="2000" oninput="syncBatCap(this.value)">
+                    <input type="range" id="batCapRange" value="60" min="5" max="300" step="5" oninput="syncBatCap(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span>Мощность подключаемой нагрузки (Вт):</span>
+                        <span id="batLoadLabel">100</span>
+                    </label>
+                    <input type="number" id="batLoadInput" value="100" min="1" max="10000" oninput="syncBatLoad(this.value)">
+                    <input type="range" id="batLoadRange" value="100" min="5" max="1500" step="5" oninput="syncBatLoad(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Тип аккумулятора (допустимый разряд):</label>
+                    <select id="batType" onchange="runBatteryCalc()">
+                        <option value="0.5">Свинцово-кислотный (WET) — разряд до 50%</option>
+                        <option value="0.7" selected>AGM / GEL — безопасный разряд до 70%</option>
+                        <option value="0.9">Литиевый (LiFePO4 / Li-ion) — разряд до 90%</option>
+                    </select>
+                </div>
+                    <div class="form-group">
+                    <label>Способ подключения:</label>
+                    <select id="batEff" onchange="runBatteryCalc()">
+                        <option value="0.98" selected>Напрямую к АКБ (12/24В) — КПД 98%</option>
+                        <option value="0.88">Через инвертор 220В — КПД ~88%</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Расчет автономности</div>
+
+                <div class="hero-result">
+                    <div class="hero-label">Расчетное время работы</div>
+                    <div class="hero-value" id="outBatTime">4 ч 56 мин</div>
+                    <div class="hero-sub">Без вреда для ресурса аккумулятора</div>
+                </div>
+
+                <div class="metric-item">
+                    <span>Полный запас энергии в АКБ:</span>
+                    <span class="metric-val"><span id="outBatTotalWh">720</span> Вт·ч</span>
+                </div>
+                <div class="metric-item">
+                    <span>Доступная полезная энергия:</span>
+                    <span class="metric-val"><span id="outBatUsableWh">494</span> Вт·ч</span>
+                </div>
+                <div class="metric-item">
+                    <span>Ток разряда аккумулятора:</span>
+                    <span class="metric-val"><span id="outBatCurrent">8.5</span> А</span>
+                </div>
+
+                <div class="tip-box">
+                    При нагрузке <b><span id="tipBatLoad">100</span> Вт</b> аккумулятор отдаст <span id="tipBatAh">42</span> А·ч полезной емкости.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Информационный блок для поисковиков -->
+    <div class="info-section">
+        <h2>Как выполняется инженерный расчет сечения провода DC</h2>
+        <p>В низковольтных системах постоянного тока (12В, 24В, 48В) главным фактором при выборе провода на средних и длинных трассах становится не только нагрев жилы, но и падение напряжения. При одинаковой мощности в сети 12В протекает ток в 18 раз выше, чем в бытовой сети 220В.</p>
+        <p>Расчет выполняется по двум параметрам одновременно: минимальное сечение по формуле потерь напряжения (с учетом удвоенной длины линии на плюсовой и минусовой проводники) и проверка выбранного кабеля по таблице длительно допустимых токовых нагрузок (ПУЭ / ГОСТ).</p>
+    </div>
+</div>
+
+<script>
+    var CABLES = [
+        { s: 0.5, i: 10 },
+        { s: 0.75, i: 15 },
+        { s: 1.0, i: 17 },
+        { s: 1.5, i: 23 },
+        { s: 2.5, i: 30 },
+        { s: 4.0, i: 41 },
+        { s: 6.0, i: 50 },
+        { s: 10.0, i: 80 },
+        { s: 16.0, i: 100 },
+        { s: 25.0, i: 140 },
+        { s: 35.0, i: 170 },
+        { s: 50.0, i: 215 },
+        { s: 70.0, i: 270 }
+    ];
+
+    var FUSES = [3, 5, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250];
+    var currentInputMode = 'watts';
+
+    // Переключение между калькуляторами
+    function switchTab(tabIndex) {
+        document.getElementById('tabBtn1').className = (tabIndex === 1) ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('tabBtn2').className = (tabIndex === 2) ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('tabContent1').className = (tabIndex === 1) ? 'tab-content active' : 'tab-content';
+        document.getElementById('tabContent2').className = (tabIndex === 2) ? 'tab-content active' : 'tab-content';
+    }
+
+    // Переключение режима Вт / А
+    function setInputMode(mode) {
+        currentInputMode = mode;
+        var isWatts = (mode === 'watts');
+        document.getElementById('modeWattsBtn').className = isWatts ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('modeAmpsBtn').className = !isWatts ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('wattsGroup').style.display = isWatts ? 'block' : 'none';
+        document.getElementById('ampsGroup').style.display = !isWatts ? 'block' : 'none';
+        runCableCalc();
+    }
+
+    function syncPower(val) {
+        document.getElementById('powerInput').value = val;
+        document.getElementById('powerRange').value = val;
+        runCableCalc();
+    }
+
+    function syncAmps(val) {
+        document.getElementById('ampsInput').value = val;
+        document.getElementById('ampsRange').value = val;
+        runCableCalc();
+    }
+
+    function syncLength(val) {
+        document.getElementById('lengthInput').value = val;
+        document.getElementById('lengthRange').value = val;
+        runCableCalc();
+    }
+
+    // Расчет калькулятора №1 (Кабель)
+    function runCableCalc() {
+        var U = parseFloat(document.getElementById('voltage').value);
+        var L = parseFloat(document.getElementById('lengthInput').value) || 0;
+        var dropPercent = parseFloat(document.getElementById('dropLimit').value);
+        var rho = parseFloat(document.getElementById('material').value);
+
+        var P = 0;
+        var currentI = 0;
+
+        if (currentInputMode === 'watts') {
+            P = parseFloat(document.getElementById('powerInput').value) || 0;
+            currentI = P / U;
+            document.getElementById('powerLabel').textContent = P;
+        } else {
+            currentI = parseFloat(document.getElementById('ampsInput').value) || 0;
+            P = currentI * U;
+            document.getElementById('ampsLabel').textContent = currentI;
+        }
+
+        document.getElementById('lengthLabel').textContent = L;
+
+        if (currentI <= 0, L <= 0, U <= 0) {
+            return;
+        }
+
+        var deltaU = U * (dropPercent / 100);
+        var exactS = (2 * L * currentI * rho) / deltaU;
+
+        var selected = CABLES[CABLES.length - 1];
+        for (var k = 0; k < CABLES.length; k++) {
+            var item = CABLES[k];
+            var maxAllowedI = (rho > 0.02) ? (item.i * 0.8) : item.i;
+            if (item.s >= exactS && maxAllowedI >= currentI) {
+                selected = item;
+                break;
+            }
+        }
+
+        var resistance = (rho * 2 * L) / selected.s;
+        var actualDropV = currentI * resistance;
+        var actualDropPct = (actualDropV / U) * 100;
+        var endV = Math.max(0, U - actualDropV);
+        var powerLoss = currentI * currentI * resistance;
+
+        var fuseVal = Math.ceil(currentI * 1.25);
+        for (var j = 0; j < FUSES.length; j++) {
+            if (FUSES[j] >= currentI * 1.25) {
+                fuseVal = FUSES[j];
+                break;
+            }
+        }
+
+        document.getElementById('outStandardSection').textContent = selected.s.toFixed(1);
+        document.getElementById('outExactSection').textContent = exactS.toFixed(2);
+        document.getElementById('outCurrent').textContent = currentI.toFixed(1);
+        document.getElementById('outPower').textContent = Math.round(P);
+        document.getElementById('outFuse').textContent = fuseVal;
+        document.getElementById('outDrop').textContent = actualDropV.toFixed(2);
+        document.getElementById('outEndVolt').textContent = endV.toFixed(2);
+        document.getElementById('outPowerLoss').textContent = powerLoss.toFixed(1);
+        document.getElementById('outDropPercentText').textContent = actualDropPct.toFixed(1) + '%';
+
+        // Обновляем цвет и ширину индикатора потерь
+        var bar = document.getElementById('dropProgressBar');
+        var barWidth = Math.min(100, (actualDropPct / 6) * 100);
+        bar.style.width = barWidth + '%';
+        if (actualDropPct <= dropPercent) {
+            bar.style.backgroundColor = '#10b981';
+        } else if (actualDropPct <= 5) {
+            bar.style.backgroundColor = '#f59e0b';
+        } else {
+            bar.style.backgroundColor = '#ef4444';
+        }
+
+        document.getElementById('tipCable').textContent = selected.s.toFixed(1);
+        document.getElementById('tipTotalLen').textContent = (L * 2).toFixed(1);
+        document.getElementById('tipFuse').textContent = fuseVal;
+    }
+// Синхронизация ползунков калькулятора №2 (АКБ)
+    function syncBatCap(val) {
+        document.getElementById('batCapInput').value = val;
+        document.getElementById('batCapRange').value = val;
+        runBatteryCalc();
+    }
+
+    function syncBatLoad(val) {
+        document.getElementById('batLoadInput').value = val;
+        document.getElementById('batLoadRange').value = val;
+        runBatteryCalc();
+    }
+
+    // Расчет калькулятора №2 (АКБ)
+    function runBatteryCalc() {
+        var U = parseFloat(document.getElementById('batVoltage').value);
+        var capAh = parseFloat(document.getElementById('batCapInput').value) || 0;
+        var loadW = parseFloat(document.getElementById('batLoadInput').value) || 0;
+        var dod = parseFloat(document.getElementById('batType').value);
+        var eff = parseFloat(document.getElementById('batEff').value);
+
+        document.getElementById('batCapLabel').textContent = capAh;
+        document.getElementById('batLoadLabel').textContent = loadW;
+
+        if (capAh <= 0 || loadW <= 0) {
+            return;
+        }
+
+        var totalWh = U * capAh;
+        var usableWh = totalWh * dod * eff;
+        var hoursDecimal = usableWh / loadW;
+
+        var fullHours = Math.floor(hoursDecimal);
+        var minutes = Math.round((hoursDecimal - fullHours) * 60);
+        if (minutes === 60) {
+            fullHours += 1;
+            minutes = 0;
+        }
+
+        var dischargeCurrent = loadW / (U * eff);
+
+        document.getElementById('outBatTime').textContent = fullHours + ' ч ' + minutes + ' мин';
+        document.getElementById('outBatTotalWh').textContent = Math.round(totalWh);
+        document.getElementById('outBatUsableWh').textContent = Math.round(usableWh);
+        document.getElementById('outBatCurrent').textContent = dischargeCurrent.toFixed(1);
+        document.getElementById('tipBatLoad').textContent = Math.round(loadW);
+        document.getElementById('tipBatAh').textContent = Math.round(capAh * dod);
+    }
+
+    // Запускаем оба расчета при старте
+    runCableCalc();
+    runBatteryCalc();
+</script>
+</body>
+</html>
